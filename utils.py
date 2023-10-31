@@ -1,7 +1,19 @@
 import pandas as pd
 import requests
 
-def get_info(reference: dict):
+def rename_fleet(fleet: str):
+    if fleet == 'medal':
+        return 'MR'
+    elif fleet == 'gold':
+        return 'G'
+    elif fleet == 'silver':
+        return 'S'
+    elif fleet == 'bronze':
+        return 'B'
+    else:
+        return 'G'
+
+def cluster9(reference: dict):
     """
     Recebe um URL com os dados a serem extraídos e
     um dicionário com o nome da classe, nome da competição e
@@ -60,6 +72,11 @@ def get_info(reference: dict):
             extracted_data['Nome Competição'].append(reference['Nome Competição'])
             
     extracted_data = pd.DataFrame(extracted_data)
+    
+    # drop rows where Pontuação Regata is ''
+    extracted_data = extracted_data[extracted_data['Pontuação Regata'] != '']
+    extracted_data['Flotilha'] = extracted_data['Flotilha'].apply(rename_fleet)
+
     extracted_data.to_excel(f'results/{reference["Nome Competição"]}_{reference["Classe Vela"]}.xlsx', index=False)
     
     return extracted_data
