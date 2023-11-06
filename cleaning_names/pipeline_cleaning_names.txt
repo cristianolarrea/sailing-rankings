@@ -1,0 +1,32 @@
+SINGLE
+-> pegar só classes single
+-> dar uppercase em tudo
+-> unidecode
+
+-> mesma pessoa com nomes diferentes
+	-> fazer distancia de levenshtein
+		-> se for menor que threshold_1, fazer automatico
+		-> entre threshold_1 e threshold_2, montar planilha de comparação
+			-> olhar nós mesmos e fazer pra todos que forem obvios
+			-> criar planilha para validação da CBVela
+	-> manter o que aparece mais vezes
+-> criar planilha de unique names 
+-> dar id pra todos (1:n)
+
+PAIRS
+-> pegar só classes double
+-> substituir [MAIUSCULA MAIUSCULA minuscula] por [MAISCULA virgula espaço MAIUSCULA minuscula]
+-> substituir [MAIUSCULA espaço MAIUSCULA minuscula] por [MAISCULA virgula espaço MAIUSCULA minuscula]
+-> dar uppercase em tudo
+-> unidecode 
+
+-> mesmas pessoas com nomes diferentes
+	-> fazer distancia de levenshtein (sailor a sailor)
+		-> se for menor que threshold_1, fazer automatico
+		-> entre threshold_1 e threshold_2, montar planilha de comparação
+			-> olhar nós mesmos e fazer pra todos que forem obvios
+			-> criar planilha para validação da CBVela
+	-> manter o que aparece mais vezes
+-> substituir na tabela (esse sailor dentro da dupla)
+-> adicionar planilha de unique names (duplas)
+-> dar id pra todos (n+1:)
