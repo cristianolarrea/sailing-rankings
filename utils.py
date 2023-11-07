@@ -3,15 +3,15 @@ import requests
 
 def rename_fleet(fleet: str):
     if fleet == 'medal':
-        return 'MR'
+        return 'MEDAL RACE'
     elif fleet == 'gold':
-        return 'G'
+        return 'OURO'
     elif fleet == 'silver':
-        return 'S'
+        return 'PRATA'
     elif fleet == 'bronze':
-        return 'B'
+        return 'BRONZE'
     else:
-        return 'G'
+        return 'GERAL'
 
 def cluster9(reference: dict):
     """
