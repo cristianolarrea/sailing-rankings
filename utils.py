@@ -75,6 +75,7 @@ def cluster9(reference: dict):
     
     # drop rows where Pontuação Regata is ''
     extracted_data = extracted_data[extracted_data['Pontuação Regata'] != '']
+    extracted_data = extracted_data.dropna(subset=['Pontuação Regata'])
     extracted_data['Flotilha'] = extracted_data['Flotilha'].apply(rename_fleet)
 
     extracted_data.to_excel(f'results/{reference["Nome Competição"]}_{reference["Classe Vela"]}.xlsx', index=False)
