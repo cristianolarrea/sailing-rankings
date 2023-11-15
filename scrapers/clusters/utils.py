@@ -86,7 +86,7 @@ def rename_fleet3(fleet, classe):
     return fleet
 
 
- def cluster8(URL: str, PATH_TO_CHROMEDRIVER: str, NOME_COMPETICAO: str, ID_COMPETICAO: int, DRIVER):
+def cluster8(URL: str, PATH_TO_CHROMEDRIVER: str, NOME_COMPETICAO: str, ID_COMPETICAO: int, DRIVER):
     DRIVER.get(URL)
     html = DRIVER.page_source
     
@@ -156,8 +156,8 @@ def rename_fleet3(fleet, classe):
     df_49er = df_49er[df_49er['Pontuação Regata'] != '']
     df_49erFX = df_49erFX[df_49erFX['Pontuação Regata'] != '']
     
-    df_49er.to_excel(f'results/{NOME_COMPETICAO}_49er.xlsx', index=False)
-    df_49erFX.to_excel(f'results/{NOME_COMPETICAO}_49erFX.xlsx', index=False)
+    df_49er.to_excel(f'scraped-data/{NOME_COMPETICAO}_49er.xlsx', index=False)
+    df_49erFX.to_excel(f'scraped-data/{NOME_COMPETICAO}_49erFX.xlsx', index=False)
     
     return df_49er, df_49erFX
 
@@ -238,6 +238,6 @@ def cluster9(reference: dict):
     extracted_data = extracted_data.dropna(subset=['Pontuação Regata'])
     extracted_data['Flotilha'] = extracted_data['Flotilha'].apply(rename_fleet)
 
-    extracted_data.to_excel(f'results/{reference["Nome Competição"]}_{reference["Classe Vela"]}.xlsx', index=False)
+    extracted_data.to_excel(f'scraped-data/{reference["Nome Competição"]}_{reference["Classe Vela"]}.xlsx', index=False)
     
     return extracted_data
