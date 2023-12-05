@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import copy
+import regex as re
 from abc import ABC, abstractmethod
 
 class Models(ABC):
@@ -13,7 +14,6 @@ class Models(ABC):
     @abstractmethod
     def fit(self, data):
         pass
-
 
     def cross_validation(self, data):
         """Calculates the error of the model using k-fold cross validation
@@ -54,7 +54,6 @@ def elo_calc(rating_a, rating_b, result, k=10):
     change = k * (result - expected)
     return change, -change
 
-
 class EloRating(Models):
     def __init__(self, ratings, k=10) -> None:
         self.k = k
@@ -82,6 +81,11 @@ class EloRating(Models):
                     ratings_copy[names[k]] += change[1]/len(results)
 
             self.ratings = ratings_copy
+    
+    def elo_error(self, rating_a, rating_b, real_result):
+        expected = 1 / (1 + 10 ** ((rating_b - rating_a) / 400))
+        return real_result - expected
+
 
     def error(self, data):
         """Calculates the error of the model
@@ -94,18 +98,19 @@ class EloRating(Models):
         """
 
         error = 0
+        count = 0
         for i in range(len(data)):
             results = data[i][0]
             names = data[i][1]
             for j in range(len(results)):
                 for k in range(j+1, len(results)):
                     r = results[j] < results[k]
-                    change = elo_calc(self.ratings[names[j]], self.ratings[names[k]], r, self.k)
+                    error_update = self.elo_error(self.ratings[names[j]], self.ratings[names[k]], r)
+                    error += abs(error_update)
+                    count += 1
 
-                    error += abs(change[0])
-                    error += abs(change[1])
-
-        return error/self.k * len(data)
+        # return error percentage
+        return error/count
 
     def k_fold(self, data, ratings):
         """ ESSE MÉTODO AINDA PODE MUDAR EU ACHO
@@ -128,6 +133,198 @@ class EloRating(Models):
             total_error += self.error(test)
 
         return total_error/len(data)
+
+
+class Keeners(Models):
+    def __init__(self, ratings=None) -> None:
+        self.ratings = ratings
+
+    def fit(self, data, time_decay=False, method='alpha'):
+        """
+        Calculates the ratings of each competitor using the Keener's method
+
+        Args:
+        data (pd.DataFrame): final dataframe with all the data
+        time_decay (bool, optional): Whether to use time decay or not. Defaults to False. 
+        method (str, optional): Method to use, either 'alpha' or 'beta'. Defaults to 'alpha'.       
+        """
+        # create dictionary to map competitor names to unique indices
+        competitor_to_index = {competitor: idx for idx, competitor in enumerate(data['Nome Competidor'].unique())}
+
+        # create matrix of size (n_players, n_players) with zeros
+        n_players = len(competitor_to_index)
+        matrix_alpha = np.zeros((n_players, n_players))
+        matrix_beta = np.zeros((n_players, n_players))
+
+        # iterate through competitions
+        for competition in data['Nome Competição'].unique():
+            year = int(data[data['Nome Competição'] == competition]['Ano'].values[0])
+
+            # get data for this competition
+            data_competition = data[data['Nome Competição'] == competition]
+            data_competition = data_competition.drop_duplicates(subset='Nome Competidor', keep='first')
+
+            # get list of competitors in this competition
+            competitors = data_competition['Nome Competidor'].unique()
+            # get number of competitors in this competition
+            n_players = len(competitors)
+            
+            # iterate through competitors in this competition setting (i, j) = 1 if i beats j in this competition
+            # get i and j from the dictionary
+            for i in range(n_players):
+                for j in range(n_players):
+                    competitor_i = competitors[i]
+                    competitor_j = competitors[j]
+                    posicao_i = data_competition[(data_competition['Nome Competidor'] == competitor_i)]['Posição Geral'].values[0]
+                    posicao_j = data_competition[(data_competition['Nome Competidor'] == competitor_j)]['Posição Geral'].values[0]
+                    pontuacao_i = data_competition[(data_competition['Nome Competidor'] == competitor_i)]['Pontuação Total'].values[0]
+                    pontuacao_j = data_competition[(data_competition['Nome Competidor'] == competitor_j)]['Pontuação Total'].values[0]
+
+                    # get index of competitor i and j in the matrix
+                    index_i = competitor_to_index[competitor_i]
+                    index_j = competitor_to_index[competitor_j]
+
+                    if posicao_i < posicao_j:
+                        if time_decay:
+                            if year >= 2021:
+                                matrix_alpha[index_i][index_j] += 1
+                                matrix_beta[index_i][index_j] += pontuacao_j/(pontuacao_i + pontuacao_j)
+                            elif year >= 2016:
+                                matrix_alpha[index_i][index_j] += 0.7
+                                matrix_beta[index_i][index_j] += 0.7*(pontuacao_j/(pontuacao_i + pontuacao_j))
+                            else:
+                                matrix_alpha[index_i][index_j] += 0.3
+                                matrix_beta[index_i][index_j] += 0.3*(pontuacao_j/(pontuacao_i + pontuacao_j))
+                        else:
+                            matrix_alpha[index_i][index_j] += 1
+                            matrix_beta[index_i][index_j] += pontuacao_j/(pontuacao_i + pontuacao_j)
+            
+        if method == 'alpha':
+            # add some perturbation to the matrix
+            perturbed_W = matrix_alpha + 0.00001 * np.ones(matrix_alpha.shape)
+
+            # get d vector, d=(W + W^T)1, where 1 is a vector of ones 
+            d = np.dot(perturbed_W + perturbed_W.T, np.ones(perturbed_W.shape[0]))
+
+            # perron frobeniun eigenvector of D^-1 W
+            eigenvalues, eigenvectors = np.linalg.eig(np.dot(np.linalg.inv(np.diag(d)), perturbed_W))
+            # absolute value of eigenvalues
+            eigenvalues = np.abs(eigenvalues)
+            idx = np.argmax(eigenvalues)
+            eigenvector = eigenvectors[idx]
+
+            # absolute value of eigenvector
+            eigenvector = np.abs(eigenvector)
+
+            # get rating dict with the name of the competitor and its rating
+            self.ratings = {competitor: rating for competitor, rating in zip(competitor_to_index.keys(), eigenvector)}
+        
+        elif method == 'beta':
+            matrix_beta = np.nan_to_num(matrix_beta)
+
+            # add some perturbation to the matrix
+            perturbed_S = matrix_beta + 0.0001*np.ones(matrix_beta.shape)
+
+            d = np.dot(perturbed_S + perturbed_S.T, np.ones(perturbed_S.shape[0]))
+
+            # create empty K matrix with same size as matrix_beta
+            K = np.zeros(perturbed_S.shape)
+
+            # for entry (i, j) in beta matrix, define h = ((i, j) + 1)/((i, j) + (j, i) + 2)
+            for i in range(n_players):
+                for j in range(n_players):
+                    x = (perturbed_S[i][j] + 1)/(perturbed_S[i][j] + perturbed_S[j][i] + 2)
+                    h = 1/2 + 1/2 * np.sign(x - 1/2) * np.sqrt(abs(2*x - 1))
+                    K[i][j] = h
+
+            # perron frobenius eigenvector of D^-1 K
+            eigenvalues, eigenvectors = np.linalg.eig(np.dot(np.linalg.inv(np.diag(d)), K))
+            idx = np.argmax(eigenvalues)
+            eigenvector = eigenvectors[idx]
+
+            # get rating dict with the name of the competitor and its rating
+            self.ratings = {competitor: rating for competitor, rating in zip(competitor_to_index.keys(), eigenvector)}
+    
+    def keeners_error(self, rating_a, rating_b, real_result):
+        winning_prob_a = 9.13*rating_a + 0.07
+        winning_prob_b = 9.13*rating_b + 0.07
+
+        prob = (winning_prob_b)/(winning_prob_a + winning_prob_b)
+        return real_result - prob
+
+    def error(self, data):
+        """Calculates the error of the model
+
+        Args:
+            data (list): List of tuples containing in position 0 the results of the matches and in position 1 the names of the players
+                        both results and names are lists of the same length
+                        Data represents one sailing class i.e. 49er, 470, etc.
+                        Each tuple represents one competition i.e. 2020 Worlds, 2021 Euros, etc.
+        """
+
+        error = 0
+        count = 0
+        for i in range(len(data)):
+            results = data[i][0]
+            names = data[i][1]
+            for j in range(len(results)):
+                for k in range(j+1, len(results)):
+                    r = results[j] < results[k]
+                    error_update = self.keeners_error(self.ratings[names[j]], self.ratings[names[k]], r)
+                    error += abs(error_update)
+                    count += 1
+
+        return error/count
+        
+
+    def k_fold(self, data):
+        pass
+
+
+
+
+
+# use keeners to get ratings
+# keeners = Keeners()
+data = pd.read_excel('./data/final_data.xlsx')
+data = data[data['Classe Vela'] == '49erFX']
+
+elo = EloRating(ratings={competitor: 1500 for competitor in data['Nome Competidor'].unique()}, k=100)
+
+# add column with year of competition
+for competition in data['Nome Competição']:
+    data.loc[data['Nome Competição'] == competition, 'Ano'] = int(re.findall(r'\d{4}', competition)[0])
+
+# keeners.fit(data, time_decay=True, method='alpha')
+
+# # get ratings from keeners
+# ratings = keeners.ratings
+# print(ratings)
+
+# get data in the format needed for error calculation
+data_dict = []
+grouped_data = data.groupby(["Ano","Nome Competição", "Nome Competidor", ]).agg({"Posição Geral": "min"}
+    ).sort_values(by=["Ano", "Nome Competição", "Posição Geral"], ascending=True).reset_index()
+
+for ano in grouped_data["Ano"].unique():
+    for comp in grouped_data[grouped_data["Ano"] == ano]["Nome Competição"].unique():
+        results = grouped_data[(grouped_data["Ano"] == ano) & (grouped_data["Nome Competição"] == comp)]["Posição Geral"].values
+        names = grouped_data[(grouped_data["Ano"] == ano) & (grouped_data["Nome Competição"] == comp)]["Nome Competidor"].values
+        data_dict.append([results, names])
+
+# fit elo
+elo.fit(data_dict)
+ratings = elo.ratings
+print(ratings)
+
+# get error of elo
+error = elo.error(data_dict)
+print(error)
+
+# # get error of keeners
+# error = keeners.error(data_dict)
+# print(error)
+
 
 # def glicko_calc(rating_a, rating_b, rd_a, rd_b, vol_a, vol_b, tau, result):
 #     q_a = np.log(10)/400
