@@ -112,7 +112,7 @@ class EloRating(Models):
         # return error percentage
         return error/count
 
-    def k_fold(self, data, ratings):
+    def k_fold(self, data):
         """ ESSE MÉTODO AINDA PODE MUDAR EU ACHO
         Calculates the error of the model using k-fold cross validation
 
@@ -128,7 +128,6 @@ class EloRating(Models):
         for i in range(len(data)):
             train = data[:i] + data[i+1:]
             test = data[i:i+1]
-            self.ratings = ratings
             self.fit(train)
             total_error += self.error(test)
 
@@ -136,10 +135,11 @@ class EloRating(Models):
 
 
 class Keeners(Models):
-    def __init__(self, ratings=None) -> None:
+    def __init__(self, ratings=None, time_decay=False) -> None:
         self.ratings = ratings
+        self.time_decay = time_decay
 
-    def fit(self, data, time_decay=False, method='alpha'):
+    def fit(self, data, time_decay=False, method='beta'):
         """
         Calculates the ratings of each competitor using the Keener's method
 
@@ -148,6 +148,9 @@ class Keeners(Models):
         time_decay (bool, optional): Whether to use time decay or not. Defaults to False. 
         method (str, optional): Method to use, either 'alpha' or 'beta'. Defaults to 'alpha'.       
         """
+        self.time_decay = time_decay
+        print(self.time_decay)
+
         # create dictionary to map competitor names to unique indices
         competitor_to_index = {competitor: idx for idx, competitor in enumerate(data['Nome Competidor'].unique())}
 
@@ -185,7 +188,7 @@ class Keeners(Models):
                     index_j = competitor_to_index[competitor_j]
 
                     if posicao_i < posicao_j:
-                        if time_decay:
+                        if self.time_decay:
                             if year >= 2021:
                                 matrix_alpha[index_i][index_j] += 1
                                 matrix_beta[index_i][index_j] += pontuacao_j/(pontuacao_i + pontuacao_j)
@@ -270,56 +273,59 @@ class Keeners(Models):
             for j in range(len(results)):
                 for k in range(j+1, len(results)):
                     r = results[j] < results[k]
-                    error_update = self.keeners_error(self.ratings[names[j]], self.ratings[names[k]], r)
-                    error += abs(error_update)
-                    count += 1
+                    if self.ratings.get(names[j]) is not None and self.ratings.get(names[k]) is not None:
+                        error_update = self.keeners_error(self.ratings[names[j]], self.ratings[names[k]], r)
+                        error += abs(error_update)
+                        count += 1
 
         return error/count
         
 
-    def k_fold(self, data):
-        pass
+    def k_fold(self, data, competitions, data_full):
+        """ ESSE MÉTODO AINDA PODE MUDAR EU ACHO
+        Calculates the error of the model using k-fold cross validation
 
+        Args:
+            data (list): List of tuples containing in position 0 the results of the matches and in position 1 the names of the players
+                        both results and names are lists of the same length
+                        Data represents one sailing class i.e. 49er, 470, etc.
+                        Each tuple represents one competition i.e. 2020 Worlds, 2021 Euros, etc.
+        """
 
+        total_error = 0
+        if self.time_decay:
+            print("entrou no time decay do kfold")
+            # test data should use 2020 onwards data
+            # train data should use all data
+            competitions_2020_onwards = []
+            competitions_2020_onwards_idx = []
+            for idx, competition in enumerate(competitions):
+                year = int(re.findall(r'\d{4}', competition)[0])
+                if year >= 2020:
+                    competitions_2020_onwards.append(competition)
+                    competitions_2020_onwards_idx.append(idx)
 
+            for i in range(len(competitions_2020_onwards)):
+                competition = competitions_2020_onwards[i]
+                idx = competitions_2020_onwards_idx[i]
+                # train data should use all data except this competition
+                train = data_full[data_full['Nome Competição'] != competition]
+                test = data[idx:idx+1]
+                self.fit(train, time_decay=True, method='beta')
+                total_error += self.error(test)
+            print(total_error/len(competitions_2020_onwards))
+            return total_error / len(competitions_2020_onwards)
 
-
-# use keeners to get ratings
-# keeners = Keeners()
-data = pd.read_excel('./data/final_data.xlsx')
-data = data[data['Classe Vela'] == '49erFX']
-
-elo = EloRating(ratings={competitor: 1500 for competitor in data['Nome Competidor'].unique()}, k=100)
-
-# add column with year of competition
-for competition in data['Nome Competição']:
-    data.loc[data['Nome Competição'] == competition, 'Ano'] = int(re.findall(r'\d{4}', competition)[0])
-
-# keeners.fit(data, time_decay=True, method='alpha')
-
-# # get ratings from keeners
-# ratings = keeners.ratings
-# print(ratings)
-
-# get data in the format needed for error calculation
-data_dict = []
-grouped_data = data.groupby(["Ano","Nome Competição", "Nome Competidor", ]).agg({"Posição Geral": "min"}
-    ).sort_values(by=["Ano", "Nome Competição", "Posição Geral"], ascending=True).reset_index()
-
-for ano in grouped_data["Ano"].unique():
-    for comp in grouped_data[grouped_data["Ano"] == ano]["Nome Competição"].unique():
-        results = grouped_data[(grouped_data["Ano"] == ano) & (grouped_data["Nome Competição"] == comp)]["Posição Geral"].values
-        names = grouped_data[(grouped_data["Ano"] == ano) & (grouped_data["Nome Competição"] == comp)]["Nome Competidor"].values
-        data_dict.append([results, names])
-
-# fit elo
-elo.fit(data_dict)
-ratings = elo.ratings
-print(ratings)
-
-# get error of elo
-error = elo.error(data_dict)
-print(error)
+        else:
+            for i in range(len(data)):
+                competition = competitions[i]
+                # get from data_full the data for this competition
+                train = data_full[data_full['Nome Competição'] != competition]
+                test = data[i:i+1]
+                self.fit(train, time_decay=False, method='beta')
+                total_error += self.error(test)
+            print(total_error/len(data))
+            return total_error/len(data)
 
 # # get error of keeners
 # error = keeners.error(data_dict)
