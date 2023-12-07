@@ -139,7 +139,7 @@ class Keeners(Models):
         self.ratings = ratings
         self.time_decay = time_decay
 
-    def fit(self, data, time_decay=False, method='beta'):
+    def fit(self, data, time_decay=True, method='alpha'):
         """
         Calculates the ratings of each competitor using the Keener's method
 

@@ -3,7 +3,7 @@ from models import *
 # read data and choose class
 
 data = pd.read_excel('./data/final_data.xlsx')
-data = data[data['Classe Vela'] == '49erFX']
+data = data[data['Classe Vela'] == 'Ilca 6']
 
 
 # add column with year of competition
@@ -42,7 +42,6 @@ for ano in grouped_data["Ano"].unique():
         names = grouped_data[(grouped_data["Ano"] == ano) & (grouped_data["Nome Competição"] == comp)]["Nome Competidor"].values
         data_dict.append([results, names])
 
-
 ##############################################
 ##############################################
 
@@ -63,3 +62,5 @@ for ano in grouped_data["Ano"].unique():
 # get k-folds error of keeners
 kfold_error = keeners.k_fold(data_dict, competitions, data)
 print(kfold_error)
+
+# ilca 6 alpha no time decay

@@ -3,7 +3,7 @@ import pandas as pd
 
 # read data and choose class
 data = pd.read_excel('./data/final_data.xlsx')
-data = data[data['Classe Vela'] == '49er']
+data = data[data['Classe Vela'] == 'Ilca 6']
 
 for competition in data['Nome Competição']:
     data.loc[data['Nome Competição'] == competition, 'Ano'] = int(re.findall(r'\d{4}', competition)[0])

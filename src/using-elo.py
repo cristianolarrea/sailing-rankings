@@ -4,9 +4,9 @@ import pandas as pd
 # read data and choose class
 
 data = pd.read_excel('./data/final_data.xlsx')
-data = data[data['Classe Vela'] == '49erFX']
+data = data[data['Classe Vela'] == 'Ilca 6']
 
-elo = EloRating(ratings={competitor: 1500 for competitor in data['Nome Competidor'].unique()}, k=400)
+elo = EloRating(ratings={competitor: 1500 for competitor in data['Nome Competidor'].unique()}, k=40)
 
 for competition in data['Nome Competição']:
     data.loc[data['Nome Competição'] == competition, 'Ano'] = int(re.findall(r'\d{4}', competition)[0])
@@ -30,4 +30,4 @@ elo.fit(data_dict)
 ratings = elo.ratings
 
 ratings = pd.DataFrame.from_dict(ratings, orient='index', columns=['Rating'])
-ratings.to_csv('./rankings/elo400-49erFX-trainset.csv')
+ratings.to_csv('./rankings/elo40-ilca6-trainset.csv')
