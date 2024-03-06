@@ -52,13 +52,13 @@ Link para os dados consolidados ao final do projeto: [https://docs.google.com/sp
   - [`source-data`](scrapers/source-data):
 
 [`src`](src): pasta contendo os scripts associados à elaboração dos métodos de ranking (modelos e métricas)
-  - [`src`](src/models.py): arquivo `.py` contendo a funções para execução dos modelos, desde fits a métricas de erro.
-  - [`src`](src/using_models.py): arquivo `.py` exemplificando a execução de ambos os modelos
-  - [`src`](src/using_keeners.py): arquivo `.py` exemplificando a execução específica do Keeners
-  - [`src`](src/using_elo.py): arquivo `.py` exemplificando a execução específica do Elo
-  - [`src`](src/keeners.py): arquivo `ipynb` utilizado durante a contrução do Keeners (somente para testes e estudo do modelo, não deve ser usado para gerar rankings)
-  - [`src`](src/generate-elo-ranking.py): arquivo `ipynb` utilizado durante a contrução do Elo (somente para testes e estudo do modelo, não deve ser usado para gerar rankings)
-  - [`src`](src/prediction_error): arquivo `ipynb` utilizado durante a elaboração da métrica de erro de predição (somente para testes e estudo, não deve ser usado para gerar rankings)
+  - [`models.py`](src/models.py): arquivo `.py` contendo a funções para execução dos modelos, desde fits a métricas de erro.
+  - [`using_models.py`](src/using_models.py): arquivo exemplificando a execução de ambos os modelos
+  - [`using_keeners.py`](src/using_keeners.py): arquivo exemplificando a execução específica do Keeners
+  - [`using_elo.py`](src/using_elo.py): arquivo exemplificando a execução específica do Elo
+  - [`keeners.py`](src/keeners.py): arquivo utilizado durante a contrução do Keeners (somente para testes e estudo do modelo, não deve ser usado para gerar rankings)
+  - [`generate-elo-ranking.py`](src/generate-elo-ranking.py): arquivo utilizado durante a contrução do Elo (somente para testes e estudo do modelo, não deve ser usado para gerar rankings)
+  - [`prediction_error`](src/prediction_error): arquivo utilizado durante a elaboração da métrica de erro de predição (somente para testes e estudo, não deve ser usado para gerar rankings)
 
 
     [^1]: Link de leitor, sem possibilidade de edição. No início do próximo projeto do Field Project com a CBVela, sugere-se que o novo grupo entre em contato com algum integrante do grupo anterior para a transferência de propriedade do arquivo.
