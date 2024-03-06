@@ -11,6 +11,8 @@ O objetivo do projeto era criar um modelo de ranking para os competidores de cla
 
 ## Organização do repositório
 
+Link para os dados consolidados ao final do projeto: [https://docs.google.com/spreadsheets/d/1MRJr7QwXIA8lJFOOH_DVyLKqe3rxYV4r/edit?usp=sharing&ouid=113213641367731055764&rtpof=true&sd=true](https://docs.google.com/spreadsheets/d/1MRJr7QwXIA8lJFOOH_DVyLKqe3rxYV4r/edit?usp=sharing&ouid=113213641367731055764&rtpof=true&sd=true)[^1].
+
 [`data`](data): 
 
 [`eda`](eda): pasta com o arquivo [`eda.ipynb`](eda/eda.ipynb), onde foi desenvolvida uma análise mais profunda dos dados coletados, com manipulações e visualizações a partir de perguntas e hipóteses definidas pelo grupo em contato com a equipe de negócios
@@ -34,4 +36,6 @@ O objetivo do projeto era criar um modelo de ranking para os competidores de cla
   - [`source-data`](scrapers/source-data):
 
 [`src`](src):
+
+[^1]: Link de leitor, sem possibilidade de edição. No início do próximo projeto do Field Project com a CBVela, sugere-se que o novo grupo entre em contato com algum integrante do grupo anterior para a transferência de propriedade do arquivo.
 
