@@ -11,12 +11,13 @@ O objetivo do projeto era obter os dados das competições de vela mundiais em a
 
 ## Modelos de Ranking
 Os modelos de ranking gerados foram:
-- Elo ranking (com variações do parâmetro k)
+- Elo ranking
+  - Variações do parâmetro k
 - Keener's Method
   - Versões _alpha_ e _beta_
   - Versões com e sem _time decay_
  
-Para maiores explicações, consultar o [relatório deste projeto](Relatório Field Project - CBVela.pdf).
+Para maiores explicações, consultar o [relatório deste projeto](Relatório.pdf).
 
 ## Organização do repositório
 
